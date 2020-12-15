@@ -34,7 +34,6 @@ mod account;
 mod storage;
 pub use account::Account;
 use anyhow::{anyhow, Context, Result};
-use bee_common::packable::Packable;
 use bee_signing_ext::{
     binary::{ed25519, BIP32Path},
     Signature, Signer, Verifier,
@@ -42,6 +41,7 @@ use bee_signing_ext::{
 pub use engine::crypto::Error as CryptoError;
 pub use engine::snapshot::Error as SnapshotError;
 pub use engine::vault::Error as VaultError;
+use iota::common::packable::Packable;
 use iota::message::prelude::{
     Ed25519Signature, Input, ReferenceUnlock, SignatureUnlock, TransactionEssence, UnlockBlock,
 };
