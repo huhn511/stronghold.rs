@@ -10,13 +10,14 @@ use crate::{
 };
 
 use engine::{snapshot, vault::RecordHint};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use riker::actors::*;
 
 use std::path::PathBuf;
 
 /// `SLIP10DeriveInput` type used to specify a Seed location or a Key location for the `SLIP10Derive` procedure.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SLIP10DeriveInput {
     /// Note that BIP39 seeds are allowed to be used as SLIP10 seeds
     Seed(Location),
@@ -25,7 +26,7 @@ pub enum SLIP10DeriveInput {
 
 /// Procedure type used to call to the runtime via `Strongnhold.runtime_exec(...)`.
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Procedure {
     /// Generate a raw SLIP10 seed and store it in the `output` location
     ///
@@ -76,7 +77,7 @@ pub enum Procedure {
 /// A Procedure return result type.  Contains the different return values for the `Procedure` type calls used with
 /// `Stronghold.runtime_exec(...)`.
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ProcResult {
     /// Return from generating a `SLIP10` seed.
     SLIP10Generate(StatusMessage),
@@ -86,13 +87,15 @@ pub enum ProcResult {
     BIP39Recover(StatusMessage),
     /// `BIP39Generate` return value.
     BIP39Generate(StatusMessage),
-    /// `BIP39MnemonicSentence` return value. Returns the mnemonic sentence for the corresponding seed.  
+    /// `BIP39MnemonicSentence` return value. Returns the mnemonic sentence for the corresponding seed.
     BIP39MnemonicSentence(ResultMessage<String>),
     /// Return value for `Ed25519PublicKey`. Returns a Ed25519 public key.
     Ed25519PublicKey(ResultMessage<[u8; crypto::ed25519::COMPRESSED_PUBLIC_KEY_LENGTH]>),
     /// Return value for `Ed25519Sign`. Returns a Ed25519 signature.
+    #[serde(with = "serde_sign_result")]
     Ed25519Sign(ResultMessage<[u8; crypto::ed25519::SIGNATURE_LENGTH]>),
     /// Return value for `SignUnlockBlock`. Returns a Ed25519 signature and a Ed25519 public key.
+    #[serde(with = "serde_sign_unlock_result")]
     SignUnlockBlock(
         ResultMessage<(
             [u8; crypto::ed25519::SIGNATURE_LENGTH],
@@ -101,8 +104,112 @@ pub enum ProcResult {
     ),
 }
 
+mod serde_sign_result {
+    use super::*;
+    use core::fmt;
+    use serde::de::{EnumAccess, Visitor};
+
+    pub fn serialize<S>(
+        result: &ResultMessage<[u8; crypto::ed25519::SIGNATURE_LENGTH]>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match result {
+            ResultMessage::Ok(message) => {
+                serializer.serialize_newtype_variant("ResultMessage", 0, "Ok", &message.to_vec())
+            }
+            ResultMessage::Error(string) => serializer.serialize_newtype_variant("ResultMessage", 1, "Error", &string),
+        }
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<ResultMessage<[u8; crypto::ed25519::SIGNATURE_LENGTH]>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        const LEN: usize = crypto::ed25519::SIGNATURE_LENGTH;
+
+        struct EnumVisitor;
+
+        impl<'de> Visitor<'de> for EnumVisitor {
+            type Value = ResultMessage<[u8; LEN]>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("ResultMessage")
+            }
+
+            fn visit_enum<A>(self, _data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                unimplemented!()
+            }
+        }
+
+        const VARIANTS: &[&str] = &["Ok", "Error"];
+        deserializer.deserialize_enum("ResultMessage", VARIANTS, EnumVisitor)
+    }
+}
+
+mod serde_sign_unlock_result {
+    use super::*;
+    use core::fmt;
+    use serde::{
+        de::{EnumAccess, Visitor},
+        ser::SerializeTuple,
+    };
+
+    type SignUnlockBlockResult = ResultMessage<(
+        [u8; crypto::ed25519::SIGNATURE_LENGTH],
+        [u8; crypto::ed25519::COMPRESSED_PUBLIC_KEY_LENGTH],
+    )>;
+
+    pub fn serialize<S>(result: &SignUnlockBlockResult, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match result {
+            ResultMessage::Ok(message) => {
+                let mut tup = serializer.serialize_tuple(2)?;
+                tup.serialize_element(&message.0.to_vec())?;
+                tup.serialize_element(&message.1)?;
+                tup.end()
+            }
+            ResultMessage::Error(string) => serializer.serialize_newtype_variant("ResultMessage", 1, "Error", &string),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<SignUnlockBlockResult, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EnumVisitor;
+
+        impl<'de> Visitor<'de> for EnumVisitor {
+            type Value = SignUnlockBlockResult;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("ResultMessage")
+            }
+
+            fn visit_enum<A>(self, _data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                unimplemented!()
+            }
+        }
+
+        const VARIANTS: &[&str] = &["Ok", "Error"];
+        deserializer.deserialize_enum("ResultMessage", VARIANTS, EnumVisitor)
+    }
+}
+
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SHRequest {
     // check if vault exists.
     CheckVault(Vec<u8>),
@@ -162,7 +269,7 @@ pub enum SHRequest {
 }
 
 /// Messages that come from stronghold
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SHResults {
     ReturnCreateVault(StatusMessage),
 

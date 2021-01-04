@@ -38,6 +38,13 @@ bee-signing-ext = { git = "https://github.com/wusyong/bee-p.git", branch = "sign
   rev = "9259a0617ca3b72e2bb2f63d5b7197247f85061c"
   features = [ "random", "ed25519", "sha", "hmac", "bip39-en", "blake2b" ]
 
+[dependencies.stronghold-communication]
+path = "../communication"
+optional = true
+
+[features]
+communication = ["stronghold-communication"]
+
 [dev-dependencies]
 hex = "0.4.2"
 criterion = "0.3.3"
