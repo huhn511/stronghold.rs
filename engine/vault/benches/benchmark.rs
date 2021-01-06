@@ -13,7 +13,7 @@ use crate::provider::Provider;
 
 fn bench_write(c: &mut Criterion) {
     let k: Key<Provider> = Key::random().unwrap();
-    let v0 = DBView::load(k.clone(), empty::<ReadResult>()).unwrap();
+    let v0 = DBView::load(k, empty::<ReadResult>()).unwrap();
 
     let mut writes = vec![];
 
