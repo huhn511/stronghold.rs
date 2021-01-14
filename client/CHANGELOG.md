@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1]
+
+-   Rename the previously incorrectly named combined SLIP10+Ed25519 procedures (now
+    named with a `SLIP10DeriveAnd` prefix) and add back the Ed25519 ("only")
+    procedures.
+        - [e221dcb](https://www.github.com/iotaledger/stronghold.rs/commit/e221dcb31519960e60982012da3c2ac154d989e1) Add back the atomic Ed25519 procedures ([#122](https://www.github.com/iotaledger/stronghold.rs/pull/122)) on 2021-01-08
+        - [8e255bf](https://www.github.com/iotaledger/stronghold.rs/commit/8e255bf4aad8caf69dcddfac24d4cdb07f716177) fix(covector): wrong version bump type ([#128](https://www.github.com/iotaledger/stronghold.rs/pull/128)) on 2021-01-14
+
 ## [0.2.0]
 
 -   Added the initial client logic and integrated it with the Riker actor model. Change includes a Client/Cache actor, a Bucket actor, a Snapshot actor, and a keystore actor.  All of the Stronghold APIs are available.

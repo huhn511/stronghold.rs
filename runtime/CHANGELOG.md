@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0]
+
+-   Add functionality to enable the guarded memory allocator in the zone when
+    running on POSIX (Linux, MacOS targets). The major contribution is a toggleable
+    memory allocator that can be used to work around rust's enforcement of only
+    one `#[global_allocator]`.
+        - [7e68346](https://www.github.com/iotaledger/stronghold.rs/commit/7e6834669e0d458bbf152d0b8a0c18791b2a856e) Add a changelog message on 2021-01-04
+-   Address two new clippy warnings: `needless_lifetimes` (addressed in the vault)
+    and `unnecessary_cast` (ignored in the runtime since they are necessary for
+    portability: `0 as libc::c_char` is not necessarily the same as `0_u8`).
+        - [1614243](https://www.github.com/iotaledger/stronghold.rs/commit/161424322af84bd4626aac5a3f96b0c529d7b39a) Add a changelog message on 2021-01-04
+
 ## [0.2.0]
 
 -   Add `arm` architecture mmap and linker for USB Armory.
